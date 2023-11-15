@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes" ?>
+<CodeBlocks_project_file>
+	<FileVersion major="1" minor="6" />
+	<Project>
+		<Option title="physics_engine_0.1" />
+		<Option pch_mode="2" />
+		<Option compiler="gcc" />
+		<Build>
+			<Target title="Release">
+				<Option output="bin/Release/physics_engine_0" prefix_auto="1" extension_auto="1" />
+				<Option object_output="obj/Release/" />
+				<Option type="1" />
+				<Option compiler="gcc" />
+				<Compiler>
+					<Add option="-O2" />
+				</Compiler>
+				<Linker>
+					<Add option="-s" />
+					<Add library="sfml-graphics" />
+					<Add library="sfml-window" />
+					<Add library="sfml-system" />
+				</Linker>
+			</Target>
+		</Build>
+		<Compiler>
+			<Add option="-Wall" />
+			<Add directory="C:/Users/arthu/Documents/prog/cplusplus/SFML-2.6.0/include" />
+			<Add directory="include" />
+		</Compiler>
+		<Linker>
+			<Add library="mingw32" />
+			<Add library="user32" />
+			<Add library="gdi32" />
+			<Add library="winmm" />
+			<Add library="dxguid" />
+			<Add directory="C:/Users/arthu/Documents/prog/cplusplus/SFML-2.6.0/lib" />
+		</Linker>
+		<Unit filename="cb.bmp" />
+		<Unit filename="include/CollisionInfo.h" />
+		<Unit filename="include/Components.h" />
+		<Unit filename="include/Engine.h" />
+		<Unit filename="include/FPS.h" />
+		<Unit filename="main.cpp" />
+		<Extensions>
+			<lib_finder disable_auto="1" />
+		</Extensions>
+	</Project>
+</CodeBlocks_project_file>
