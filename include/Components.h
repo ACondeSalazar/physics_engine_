@@ -184,8 +184,7 @@ struct Box
             size_sides = Vector2(width, height);
             angular_velocity = 0;
             rotation = 0;
-            mass = 5;
-            inverse_mass = 1/mass;
+            set_mass(25);
             restitution = 0;
             immovable = false;
         }
@@ -281,7 +280,13 @@ struct Box
         void set_mass(float a_mass)
         {
             mass = a_mass;
-            inverse_mass = 1/a_mass;
+            if(mass <= 0)
+            {
+                inverse_mass = 0;
+            }else{
+                inverse_mass = 1/a_mass;
+            }
+
         }
 
         //vertices

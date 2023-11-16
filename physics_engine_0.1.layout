@@ -2,28 +2,30 @@
 <CodeBlocks_layout_file>
 	<FileVersion major="1" minor="0" />
 	<ActiveTarget name="Release" />
-	<File name="include\Engine.h" open="1" top="1" tabpos="2" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
+	<File name="include\Engine.h" open="1" top="0" tabpos="2" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
 		<Cursor>
-			<Cursor1 position="8462" topLine="172" />
+			<Cursor1 position="1965" topLine="36" />
 		</Cursor>
 		<Folding>
-			<Collapse line="153" />
-			<Collapse line="173" />
+			<Collapse line="168" />
+			<Collapse line="176" />
+			<Collapse line="188" />
+			<Collapse line="199" />
 		</Folding>
-	</File>
-	<File name="include\CollisionInfo.h" open="1" top="0" tabpos="4" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
-		<Cursor>
-			<Cursor1 position="771" topLine="4" />
-		</Cursor>
-	</File>
-	<File name="main.cpp" open="1" top="0" tabpos="1" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
-		<Cursor>
-			<Cursor1 position="340" topLine="0" />
-		</Cursor>
 	</File>
 	<File name="include\Components.h" open="1" top="0" tabpos="3" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
 		<Cursor>
-			<Cursor1 position="1065" topLine="46" />
+			<Cursor1 position="3699" topLine="169" />
+		</Cursor>
+	</File>
+	<File name="main.cpp" open="1" top="1" tabpos="1" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
+		<Cursor>
+			<Cursor1 position="318" topLine="3" />
+		</Cursor>
+	</File>
+	<File name="include\CollisionInfo.h" open="1" top="0" tabpos="4" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
+		<Cursor>
+			<Cursor1 position="771" topLine="12" />
 		</Cursor>
 	</File>
 </CodeBlocks_layout_file>

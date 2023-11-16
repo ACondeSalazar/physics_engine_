@@ -13,6 +13,8 @@ struct Physics_simulation_engine
         std::vector<Edges> edges_vector; //liste des cotes de tous les objets
         double delta;
         Vector2 simulation_size;
+        float velocity_treshold = 5;
+        Vector2 gravity_force = Vector2(0,300);
 
     public:
         Physics_simulation_engine(float width, float height)
@@ -45,14 +47,20 @@ struct Physics_simulation_engine
                 Vector2 velocity = box.get_velocity();
                 float angular_velocity = box.get_angular_velocity();
 
-                box.add_to_position(velocity*delta);
+                if(velocity.get_norm() > velocity_treshold)
+                {
+                    box.add_to_position(velocity*delta);
+                }
+                //box.add_to_position(gravity_force*delta);
                 box.add_to_rotation(angular_velocity*delta);
             }
 
-            for(int loop = 0; loop < 1; loop++)
+            //detecting collision
+
+            int maxloop = 1;
+            for(int loop = 0; loop < maxloop; loop++) //correct pos multiple time for accuracy
             {
 
-                    //detecting collision
                 collisions_vector.clear();
                 for(int i = 0; i < objects.size(); i++)
                 {
@@ -67,6 +75,7 @@ struct Physics_simulation_engine
                     if(info.colliding)
                     {
                         resolve_collision(info);
+                        correct_position(info, 1);
                     }
                 }
 
@@ -141,6 +150,12 @@ struct Physics_simulation_engine
             collision_info.relative_normal_velocity = collision_info.normal.dot_product(box2.get_velocity() - box1.get_velocity()); //relative velocity along collision normal
             collision_info.relative_angular_velocity = box2.get_angular_velocity() - box1.get_angular_velocity();
 
+            if(collision_info.relative_normal_velocity > 0)
+            {
+                collision_info.colliding = false;
+                return collision_info;
+            }
+
             float restitution1 = box1.get_restitution();
             float restitution2 = box2.get_restitution();
             collision_info.restitution = std::min(restitution1,restitution2); //ceofficient de restitution
@@ -183,12 +198,6 @@ struct Physics_simulation_engine
 
         void resolve_collision(CollisionInfo collision_info)
         {
-
-            if(collision_info.relative_normal_velocity > 0)
-            {
-                //return;
-            }
-
             Box& box1 = objects[collision_info.index_box1];
             Box& box2 = objects[collision_info.index_box2];
 
@@ -203,21 +212,41 @@ struct Physics_simulation_engine
             float linear_impulse = -(1+collision_info.restitution)*collision_info.relative_normal_velocity;
             linear_impulse /= box1.get_inverse_mass() + box2.get_inverse_mass();
 
-            //adding velocity and correcting position
-            float correction_percentage = 0.2 //from 0 to 1 how much we want to correct position too high value may look weird
-            float correction_treshold = 0.01; //we allow
-            float position_correction = collision_info.penetration_depth * correction ;
+            //adding velocity
 
             Vector2 impulse_vec =  collision_normal * linear_impulse; //vector with direction and magnitude of force resulted by the collision
             if(!box1.is_immovable()){
                 box1.add_to_velocity(-impulse_vec/mass1);
-                box1.add_to_position((-collision_normal) * (position_correction * 0.5));
+                //box1.add_to_position(collision_normal * (-position_correction));
             }
             if(!box2.is_immovable()){
                 box2.add_to_velocity(impulse_vec/mass2);
-                box2.add_to_position((collision_normal) * (position_correction * 0.5));
+                //box2.add_to_position(collision_normal * position_correction);
             }
 
+        }
+
+        void correct_position(CollisionInfo collision_info, float strength)
+        {
+            Box& box1 = objects[collision_info.index_box1];
+            Box& box2 = objects[collision_info.index_box2];
+
+            float correction_percentage = 0.1; //from 0 to 1 how much we want to correct position too high value may look weird
+            float correction_treshold = 0.1; //let objects sink into each other with this threshold to avoid jitter
+
+            if(collision_info.penetration_depth < correction_treshold){return;} //si on doit faire qu'une tres faible correction on skip
+
+            float position_correction = collision_info.penetration_depth - correction_treshold / (box1.get_inverse_mass() + box2.get_inverse_mass() ) * correction_percentage * strength;
+
+            if(box1.is_immovable()){
+                box2.add_to_position(collision_info.normal * (position_correction));
+            }
+            else if(box2.is_immovable()){
+                box1.add_to_position(collision_info.normal * (-position_correction));
+            }else{
+                box1.add_to_position(collision_info.normal * (-position_correction) *0.5);
+                box2.add_to_position(collision_info.normal * (position_correction) *0.5);
+            }
         }
 
         void add_object(Box a_box)
