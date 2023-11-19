@@ -184,8 +184,8 @@ struct Box
             size_sides = Vector2(width, height);
             angular_velocity = 0;
             rotation = 0;
-            set_mass(25);
-            restitution = 0;
+            set_mass(1);
+            restitution = 0.5;
             immovable = false;
         }
 

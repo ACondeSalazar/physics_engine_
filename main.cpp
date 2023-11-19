@@ -14,7 +14,7 @@ int main()
     // Create the main window
     sf::RenderWindow app(sf::VideoMode(WIDTH, HEIGHT), "sim ");
 
-    //app.setFramerateLimit(60);
+    //app.setFramerateLimit(120);
     FPS fps;
     sf::Clock clock;
     double delta = clock.restart().asSeconds();
@@ -31,7 +31,8 @@ int main()
     Box b = Box(WIDTH, 50);
     b.set_position(0, HEIGHT -100);
     b.set_immovable(true);
-    //b.set_mass(0);
+    //b.set_restitution(0);
+    b.set_mass(0);
     engine.add_object(b);
 
 
@@ -55,7 +56,7 @@ int main()
                     sf::Vector2f size_shape = box_to_place.get_size_sides().get_vector2f();
                     box_to_place.set_position(mouse_position.x-size_shape.x/2, mouse_position.y-size_shape.y/2);
                     //box_to_place.set_rotation(45);
-                    box_to_place.set_velocity(0,500);
+                    box_to_place.set_velocity(250,500);
                     engine.add_object(box_to_place);
                     std::cout << "placed block" << std::endl;
                     std::cout << "Mouse Click Position: " << mouse_position.x << ", " << mouse_position.y << std::endl;
@@ -197,7 +198,7 @@ int main()
         fps.update();
         std::ostringstream fpsString;
         fpsString << fps.getFPS();
-        app.setTitle("fps: " + fpsString.str());
+        app.setTitle("fps: " + fpsString.str() + "/ objects: " + to_string(objects.size())   );
 
         delta = clock.restart().asSeconds();
     }

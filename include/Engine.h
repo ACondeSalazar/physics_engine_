@@ -93,11 +93,16 @@ struct Physics_simulation_engine
             Box box1 = objects[index_box_1];
             Vertices vertices_box1 = vertices_vector[index_box_1];
             Edges edges_box1 = edges_vector[index_box_1];
+            Vector2 position1 = box1.get_position();
+            float restitution1 = box1.get_restitution();
+
 
             //pareil pour le deuxieme
             Box box2 = objects[index_box_2];
             Vertices vertices_box2 = vertices_vector[index_box_2];
             Edges edges_box2 = edges_vector[index_box_2];
+            Vector2 position2 = box2.get_position();
+            float restitution2 = box2.get_restitution();
 
             //liste des axes
             std::vector<Vector2> axes; //tous les axes ou on va appliquer le sat theorem
@@ -115,7 +120,7 @@ struct Physics_simulation_engine
                 axes.push_back(axis);
             }
 
-            for(Vector2 axis : axes)
+            for(Vector2 axis : axes) //on projette sur chaque axe
             {
                 vector<float> projection_box1 = project_box_on_axis(index_box_1,axis); //tableau de taille 2 [min,max] du segment projete
                 vector<float> projection_box2 = project_box_on_axis(index_box_2,axis); //pareil
@@ -127,7 +132,9 @@ struct Physics_simulation_engine
                     return collision_info;
                 }
 
-                float penetration_depth = std::min(projection_box1[1], projection_box2[1]) - std::max(projection_box1[0], projection_box2[0]);
+                float projection_min = std::min(projection_box1[1], projection_box2[1]);
+                float projection_max = std::max(projection_box1[0], projection_box2[0]);
+                float penetration_depth = projection_min - projection_max;
                 //std::cout << "penetration depth : "<< penetration_depth<< std::endl;
 
                 if(penetration_depth < collision_info.penetration_depth)
@@ -135,12 +142,14 @@ struct Physics_simulation_engine
                     collision_info.penetration_depth = penetration_depth;
                     //std::cout << "NEW DEPTH"<< std::endl;
                     collision_info.set_normal(axis);
+
+                    collision_info.collision_points.push_back(position1 + (axis*projection_min) );
+                    collision_info.collision_points.push_back(position2 + (axis*projection_min) );
                 }
 
             }
 
-            Vector2 position1 = box1.get_position();
-            Vector2 position2 = box2.get_position();
+
 
             if(collision_info.normal.dot_product(position2-position1) < 0) //on s'assure de toujours pointe de l'objet 1 vers l'objet 2 pour eviter le bordel apres
             {
@@ -150,16 +159,13 @@ struct Physics_simulation_engine
             collision_info.relative_normal_velocity = collision_info.normal.dot_product(box2.get_velocity() - box1.get_velocity()); //relative velocity along collision normal
             collision_info.relative_angular_velocity = box2.get_angular_velocity() - box1.get_angular_velocity();
 
-            if(collision_info.relative_normal_velocity > 0)
+            if(collision_info.relative_normal_velocity > 0) // si les objets s'eloignent la collision a deja ete resolu
             {
                 collision_info.colliding = false;
                 return collision_info;
             }
 
-            float restitution1 = box1.get_restitution();
-            float restitution2 = box2.get_restitution();
             collision_info.restitution = std::min(restitution1,restitution2); //ceofficient de restitution
-
 
             return collision_info;
         }
