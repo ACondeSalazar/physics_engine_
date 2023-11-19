@@ -185,7 +185,7 @@ struct Box
             angular_velocity = 0;
             rotation = 0;
             set_mass(1);
-            restitution = 0.5;
+            restitution = 0;
             immovable = false;
         }
 

@@ -13,8 +13,8 @@ struct Physics_simulation_engine
         std::vector<Edges> edges_vector; //liste des cotes de tous les objets
         double delta;
         Vector2 simulation_size;
-        float velocity_treshold = 5;
-        Vector2 gravity_force = Vector2(0,300);
+        float velocity_treshold = 8;
+        float gravity_force = 500;
 
     public:
         Physics_simulation_engine(float width, float height)
@@ -51,7 +51,12 @@ struct Physics_simulation_engine
                 {
                     box.add_to_position(velocity*delta);
                 }
-                //box.add_to_position(gravity_force*delta);
+                if(velocity.y < gravity_force)
+                {
+                    box.add_to_velocity(Vector2(0,gravity_force)*delta *box.get_inverse_mass());
+                }
+
+
                 box.add_to_rotation(angular_velocity*delta);
             }
 
