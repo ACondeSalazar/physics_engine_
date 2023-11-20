@@ -62,7 +62,8 @@ int main()
                     sf::Vector2f size_shape = box_to_place.get_size_sides().get_vector2f();
                     box_to_place.set_position(mouse_position.x-size_shape.x/2, mouse_position.y-size_shape.y/2);
                     //box_to_place.set_rotation(45);
-                    //box_to_place.set_velocity(0,500);
+                    box_to_place.set_velocity(0,500);
+                    //box_to_place.set_angular_velocity(100);
                     engine.add_object(box_to_place);
                     std::cout << "placed block" << std::endl;
                     std::cout << "Mouse Click Position: " << mouse_position.x << ", " << mouse_position.y << std::endl;
@@ -194,6 +195,19 @@ int main()
                 ligne1[1].color = sf::Color::Yellow;
                 app.draw(ligne1);
 
+                for(Vector2& collision_point : info.collision_points)
+                {
+                    //centre du rectangle
+                    sf::CircleShape circle;
+
+                    circle.setPosition(collision_point.x, collision_point.y);
+                    int radius = 4;
+                    circle.setRadius(radius);
+                    circle.setOrigin(radius,radius);
+                    circle.setFillColor(sf::Color::Blue);
+                    app.draw(circle);
+                }
+
             }
         }
 
@@ -204,7 +218,7 @@ int main()
         fps.update();
         std::ostringstream fpsString;
         fpsString << fps.getFPS();
-        app.setTitle("fps: " + fpsString.str() + "/ objects: " + to_string(objects.size())   );
+        app.setTitle("fps: " + fpsString.str() + "/ objects: " + to_string(objects.size()) +"/ delta: " + to_string(engine.get_delta_time())  );
 
         delta = clock.restart().asSeconds();
     }

@@ -3,6 +3,7 @@
 #include "Components.h"
 #include "CollisionInfo.h"
 #include <vector>
+#include <optional>
 using namespace std;
 struct Physics_simulation_engine
 {
@@ -11,10 +12,10 @@ struct Physics_simulation_engine
         std::vector<CollisionInfo> collisions_vector; //liste des info de collision entre les objets si il y a
         std::vector<Vertices> vertices_vector; // liste des vertices de tout les objets
         std::vector<Edges> edges_vector; //liste des cotes de tous les objets
-        double delta;
+        double delta_time;
         Vector2 simulation_size;
         float velocity_treshold = 8;
-        float gravity_force = 500;
+        Vector2 gravity_force = Vector2(0,100);
 
     public:
         Physics_simulation_engine(float width, float height)
@@ -24,6 +25,8 @@ struct Physics_simulation_engine
 
         void update(double delta)
         {
+            delta_time = delta;
+
             vertices_vector.clear();
             edges_vector.clear();
             for(int i = 0; i < objects.size(); i++)
@@ -44,6 +47,7 @@ struct Physics_simulation_engine
                 //if (posi.x < -300 || posi.x > simulation_size.x +300) {continue;} //if out of bound we dont update the object
                 //if (posi.y > simulation_size.y + 300) {continue;}
 
+                Vector2 position = box.get_position();
                 Vector2 velocity = box.get_velocity();
                 float angular_velocity = box.get_angular_velocity();
 
@@ -51,11 +55,6 @@ struct Physics_simulation_engine
                 {
                     box.add_to_position(velocity*delta);
                 }
-                if(velocity.y < gravity_force)
-                {
-                    box.add_to_velocity(Vector2(0,gravity_force)*delta *box.get_inverse_mass());
-                }
-
 
                 box.add_to_rotation(angular_velocity*delta);
             }
@@ -147,9 +146,6 @@ struct Physics_simulation_engine
                     collision_info.penetration_depth = penetration_depth;
                     //std::cout << "NEW DEPTH"<< std::endl;
                     collision_info.set_normal(axis);
-
-                    collision_info.collision_points.push_back(position1 + (axis*projection_min) );
-                    collision_info.collision_points.push_back(position2 + (axis*projection_min) );
                 }
 
             }
@@ -171,6 +167,19 @@ struct Physics_simulation_engine
             }
 
             collision_info.restitution = std::min(restitution1,restitution2); //ceofficient de restitution
+
+            //calcul des coordonnes des points de collision / il faudrait le fusionner au code reste du code de detection
+            for(Line& line1 : edges_box1.get_edges())
+            {
+                for(Line& line2 : edges_box2.get_edges())
+                {
+                    std::optional<Vector2> collision_point = line1.intersection(line2);
+                    if(collision_point)
+                    {
+                        collision_info.collision_points.push_back(collision_point.value());
+                    }
+                }
+            }
 
             return collision_info;
         }
@@ -288,6 +297,11 @@ struct Physics_simulation_engine
         void delete_all_objects()
         {
             objects.clear();
+        }
+
+        double get_delta_time()
+        {
+            return delta_time;
         }
 
 };

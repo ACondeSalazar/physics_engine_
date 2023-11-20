@@ -3,6 +3,7 @@
 #include <vector>
 #include <SFML/System/Vector2.hpp>
 #include <cmath>
+#include <optional>
 
 struct Vector2
 {
@@ -127,6 +128,55 @@ struct Line
     {
         Vector2 v = get_vector();
         return Vector2(v.y/v.get_norm(), -v.x/v.get_norm());
+    }
+
+    bool intersect_nul(Line other)
+    {
+        float orientation1 = orientation(start_point, end_point, other.start_point);
+        float orientation2 = orientation(start_point, end_point, other.end_point);
+        float orientation3 = orientation(other.start_point, other.end_point, start_point);
+        float orientation4 = orientation(other.start_point, other.end_point, end_point);
+
+        if (orientation1 * orientation2 < 0 and orientation3 * orientation4 < 0) //if segment intersect
+        {
+            float t = orientation3 / orientation(other.start_point, other.end_point, start_point - end_point);
+        }
+        return true;
+    }
+
+    float orientation(Vector2 p1, Vector2 p2, Vector2 p3)
+    {
+        return (p2.y - p1.y) * (p3.x - p2.x) - (p2.x - p1.x) * (p3.y - p2.y);
+    }
+
+    std::optional<Vector2> intersection(Line other)// https://nguyen.univ-tln.fr/share/GeomAlgo/trans_inter.pdf // this(A,B), other(C,B)
+    {
+        float det = determinant(other);
+        if(det == 0){return {};} // segments parallele
+
+        Vector2 A = start_point;
+        Vector2 B = end_point;
+        Vector2 C = other.start_point;
+        Vector2 D = other.end_point;
+
+        float t1 = (  (C.x - A.x)*(C.y - D.y) - (C.x - D.x)*(C.y - A.y)  )/det;
+        float t2 = (  (B.x - A.x)*(C.y - A.y) - (C.x - A.x)*(B.y - A.y)  )/det;
+
+        if(t1 > 1 || t1 < 0 || t2 > 1 || t2 < 0){return {};}
+
+        if(t1 == 0){ return A;}
+        if(t1 == 1){ return B;}
+        if(t2 == 0){ return C;}
+        if(t2 == 1){ return D;}
+
+        float x_intersection = A.x + t1*(B.x - A.x);
+        float y_intersection = A.y + t1*(B.y - A.y);
+        return {Vector2(x_intersection, y_intersection)};
+    }
+
+    float determinant(Line other) // https://nguyen.univ-tln.fr/share/GeomAlgo/trans_inter.pdf
+    {
+        return (end_point.x - start_point.x)*(other.start_point.y - other.end_point.y) - (other.start_point.x - other.end_point.x)*(end_point.y - start_point.y);
     }
 
     Vector2 get_vector(){return end_point - start_point;} //renvoie le vecteur end - start (le vecteur entre les 2 points)
