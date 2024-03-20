@@ -9,6 +9,7 @@
 #include <stdlib.h>
 #include <vector>
 #include <time.h>
+#include <chrono>
 
 class Physics_simulation_engine {
 private:
@@ -34,6 +35,12 @@ private:
   int correction = 1;
 
   Vector2f gravity_force = Vector2f(0, 500);
+  
+  //monitoring
+  int updating_position_duration;
+  int detect_collision_duration;
+  int resolve_collision_duration;
+  int correct_position_duration;
 
 
   Physics_simulation_engine(float width, float height) {
@@ -78,18 +85,22 @@ private:
 
       box.add_to_rotation(box.get_angular_velocity() * delta);
 
-	  int real_sim_border = 30; //décalage de la bordure de la sim avec la taille de la fenetre (la sim est plus grand que la fenetre)
+	  int real_sim_border = 150; //décalage de la bordure de la sim avec la taille de la fenetre (la sim est plus grand que la fenetre)
       if (position.x > simulation_size.x+real_sim_border) {
-        box.set_position(Vector2f(-real_sim_border, box.get_position().y));
+		continue;
+        //box.set_position(Vector2f(-real_sim_border, box.get_position().y));
       }
 	  if(position.x < -real_sim_border){
-		box.set_position(Vector2f(simulation_size.x+real_sim_border, box.get_position().y));
+		continue;
+		//box.set_position(Vector2f(simulation_size.x+real_sim_border, box.get_position().y));
 	  }
       if (position.y > simulation_size.y+real_sim_border) {
-        box.set_position(Vector2f(box.get_position().x, -real_sim_border));
+		continue;
+        //box.set_position(Vector2f(box.get_position().x, -real_sim_border));
       }
 	  if (position.y < -real_sim_border) {
-        box.set_position(Vector2f(box.get_position().x, simulation_size.y+real_sim_border));
+		continue;
+        //box.set_position(Vector2f(box.get_position().x, simulation_size.y+real_sim_border));
       }
     }
 
@@ -192,7 +203,7 @@ private:
 	box2.get_velocity());
 	}else if (box2.is_immovable()) {
 		collision_info.relative_normal_velocity = collision_info.normal.dot_product(
-	box1.get_velocity());
+	-box1.get_velocity());
 	}else {
 		collision_info.relative_normal_velocity = collision_info.normal.dot_product(
 	box2.get_velocity() - box1.get_velocity());

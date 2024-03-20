@@ -44,6 +44,10 @@ int main(int argc, char *argv[]) {
   color_palette.push_back(sf::Color(181, 101, 118));
   color_palette.push_back(sf::Color(240, 113, 103));
 
+  float gravity[2] = {0, 0};
+  float gravity_max = 1000;
+  float gravity_min = 0;
+
   srand(time(NULL));
 
   // Init of all components
@@ -78,7 +82,7 @@ int main(int argc, char *argv[]) {
   b.color = color_palette[1];
   engine.add_object(b);
 
-  for (int i = 0; i < 0; i++) {
+  for (int i = 0; i < 10; i++) {
     float r_x = rand() % SIM_WIDTH;
     float r_y = rand() % SIM_HEIGHT;
     BoxBody r_box = BoxBody(rand() % 40 + 30, rand() % 40 + 30);
@@ -98,6 +102,7 @@ int main(int argc, char *argv[]) {
   BoxBody *selected_box = nullptr; //&(engine.get_objects()[0]);
 
   bool debug = false;
+  bool simulation_paused = false;
 
   std::vector<float> update_duration_history;
 
@@ -158,6 +163,7 @@ int main(int argc, char *argv[]) {
               new_box.set_rotation(0);
               new_box.color = color_palette[rand() % color_palette.size()];
               engine.add_object(new_box);
+              engine.update(0);
             }
             user_drawing = false;
           }
@@ -180,27 +186,30 @@ int main(int argc, char *argv[]) {
         } else if (event.type == sf::Event::KeyPressed &&
                    event.key.code == sf::Keyboard::C) {
           engine.delete_all_objects();
+          selected_box = nullptr;
         }
       }
     }
 
     auto start = std::chrono::steady_clock::now();
-    // updating
-    engine.update(delta);
+    if (!simulation_paused) {
+      // updating
+      engine.update(delta);
+    }
     auto update_duration =
         std::chrono::duration_cast<std::chrono::microseconds>(
             std::chrono::steady_clock::now() - start);
 
-	if(update_duration_history.size() < 250){
-		update_duration_history.push_back(update_duration.count());
-	}else{
-		update_duration_history.erase(update_duration_history.begin());
-		update_duration_history.push_back(update_duration.count());
-	}
+    if (update_duration_history.size() < 250) {
+      update_duration_history.push_back(update_duration.count());
+    } else {
+      update_duration_history.erase(update_duration_history.begin());
+      update_duration_history.push_back(update_duration.count());
+    }
 
-    start = std::chrono::steady_clock::now();//render time start
+    start = std::chrono::steady_clock::now(); // render time start
 
-	//background color is black if debug mode
+    // background color is black if debug mode
     sf::Color background_color =
         debug ? sf::Color::Black : sf::Color(100, 100, 100);
     window.clear(background_color);
@@ -387,21 +396,34 @@ int main(int argc, char *argv[]) {
 
     // drawing gui
     ImGui::SFML::Update(window, clock.restart());
+    //ImGui::ShowDemoWindow();
     ImGui::Begin("Sim Settings");
-    // ImGui::SetWindowSize(ImVec2(MENU_WIDTH, MENU_HEIGHT));
-    // ImGui::SetWindowPos(ImVec2(WINDOW_WIDTH - MENU_WIDTH, 0));
-    ImGui::ShowDemoWindow();
 
     if (ImGui::BeginTabBar("Navigation")) {
 
       if (ImGui::BeginTabItem("Settings")) {
+        if (ImGui::Button("Pause/Play")) {
+          simulation_paused = !simulation_paused;
+        }
+
         ImGui::Text("fps: %d", fps.getFPS());
-		ImGui::PlotLines("update time", update_duration_history.data(), update_duration_history.size());
-        ImGui::Text("update duration : %lu ms", update_duration.count());
+        ImGui::PlotLines("update time", update_duration_history.data(),
+                         update_duration_history.size());
+		float avg_update_time = 0;
+		for (int i = 0; i < update_duration_history.size(); i++){avg_update_time+= update_duration_history[i];}
+		avg_update_time /= update_duration_history.size()*1000;
+        ImGui::Text("average update duration : %.2f ms", avg_update_time);
         ImGui::Text("render duration : %lu ms", render_duration.count());
-        ImGui::SliderInt("Accuracy", &(engine.accuracy), 1, 20);
-		ImGui::SliderFloat("Position correction treshold", &(engine.correction_treshold), 0, 20);
-		ImGui::SliderFloat("Position correction strength", &(engine.correction_percentage), 0, 2);
+        ImGui::Separator();
+        ImGui::SliderInt("Accuracy", &(engine.accuracy), 1, 50);
+        ImGui::SliderFloat("Position correction treshold",
+                           &(engine.correction_treshold), 0, 20);
+        ImGui::SliderFloat("Position correction strength",
+                           &(engine.correction_percentage), 0, 2);
+
+        ImGui::SliderScalarN("Gravity(x,y)", ImGuiDataType_Float, gravity, 2,
+                             &gravity_min, &gravity_max, "%.1f");
+        engine.gravity_force = Vector2f(gravity[0], gravity[1]);
         ImGui::Checkbox("Debug view", &debug);
         ImGui::EndTabItem();
       }
@@ -409,22 +431,43 @@ int main(int argc, char *argv[]) {
       if (ImGui::BeginTabItem("Inspector")) {
         if (selected_box != nullptr) {
           ImGui::Text("Object ID : %d", selected_box->id);
-          ImGui::Text("mass : %f", selected_box->get_mass());
-          ImGui::Text("restitution : %f", selected_box->get_restitution());
-          bool is_static = selected_box->is_immovable();
-          ImGui::Checkbox("static", &is_static);
-          selected_box->set_immovable(is_static);
           ImGui::Text("position : %s",
                       selected_box->get_position().to_string().c_str());
           ImGui::Text("velocity : %s",
                       selected_box->get_velocity().to_string().c_str());
+          ImGui::Separator();
+		  ImGui::Text("Edit properties :");
+
+			bool is_static = selected_box->is_immovable();
+          ImGui::Checkbox("static", &is_static);
+		  //on ne modifie le tag static que si changement
+		  if(is_static != selected_box->is_immovable()){ 
+			selected_box->set_immovable(is_static);
+		  }
+          
+
+		if(!is_static){
+			int mass = selected_box->get_mass();
+		  ImGui::SliderInt("Mass", &(mass), 1, 500);
+		  selected_box->set_mass(mass);
+
+		}
+		  float restitution = selected_box->get_restitution();
+		  ImGui::SliderFloat("restitution", &(restitution), 0, 1);
+		  selected_box->set_restitution(restitution);
+		  
         } else {
-          ImGui::Text("Right click to select an object");
+          ImGui::Text("Right click(or hold) to select an object");
         }
-		ImGui::EndTabItem();
+        ImGui::EndTabItem();
+      }
+
+      if (ImGui::BeginTabItem("Help")) {
+        ImGui::BulletText("Hold Right click to select and drag object");
+        ImGui::EndTabItem();
       }
     }
-	ImGui::EndTabBar();
+    ImGui::EndTabBar();
 
     ImGui::End();
 

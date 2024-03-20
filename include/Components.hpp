@@ -249,9 +249,14 @@ public:
     }
   }
 
-  // static
+  // static object
   bool is_immovable() { return immovable; }
-  void set_immovable(bool b) { immovable = b; }
+  void set_immovable(bool b) { 
+	if(!b){
+		set_mass(1);
+	}
+	immovable = b; 
+	}
 
   virtual Vector2f get_center() = 0;
 };
