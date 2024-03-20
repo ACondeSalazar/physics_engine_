@@ -30,7 +30,7 @@ private:
   // how many times we detect and resolve collision in a single step
   int correction = 1;
 
-  Vector2f gravity_force = Vector2f(0, 200);
+  Vector2f gravity_force = Vector2f(0, 500);
 
 public:
   Physics_simulation_engine(float width, float height) {
