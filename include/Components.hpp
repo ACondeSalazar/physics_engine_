@@ -1,10 +1,13 @@
 #ifndef COMPONENTS_H
 #define COMPONENTS_H
 
+#include <SFML/Graphics/Color.hpp>
 #include <SFML/System/Vector2.hpp>
 #include <cmath>
+#include <string>
 #include <vector>
 #include <optional>
+#include <string.h>
 
 class Vector2f {
 
@@ -45,6 +48,8 @@ public:
   float dot_product(Vector2f other) { return (x * other.x) + (y * other.y); }
 
   sf::Vector2f convert_to_sfml() { return sf::Vector2f(x, y); }
+
+  std::string to_string(){ return "(" + std::to_string((int)x) + "," + std::to_string((int)y) + ")";}
 
 };
 
@@ -169,6 +174,7 @@ protected:
   float inverse_mass;
   float restitution;
   bool immovable;
+  
 
   Entity() {
     position = Vector2f();
@@ -178,9 +184,13 @@ protected:
     set_mass(1);
     restitution = 0.5;
     immovable = false;
+	color = sf::Color::Black;
   }
 
 public:
+	sf::Color color;
+	int id;
+  void set_id(int a_id){ id = a_id;}
   Vector2f get_position() { return position; }
   void set_position(float a_x, float a_y) {
     position.x = a_x;
@@ -228,8 +238,8 @@ public:
   void set_restitution(float a_restitution) { restitution = a_restitution; }
 
   // mass
-  float get_inverse_mass() { return inverse_mass; }
-  float get_mass() { return mass; }
+  float get_inverse_mass() { return immovable? 0 : inverse_mass; }
+  float get_mass() { return immovable? 0: mass; }
   void set_mass(float a_mass) {
     mass = a_mass;
     if (mass <= 0) {

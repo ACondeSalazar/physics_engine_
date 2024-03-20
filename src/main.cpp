@@ -1,11 +1,15 @@
+#include "../_deps/imgui-sfml-src/imgui-SFML.h"
+#include "../_deps/imgui-src/imgui.h"
 #include "../include/Components.hpp"
 #include "../include/Engine.hpp"
 #include "../include/Fps.hpp"
 #include <SFML/Graphics.hpp>
 #include <SFML/Graphics/Color.hpp>
+#include <SFML/System/Time.hpp>
 #include <SFML/System/Vector2.hpp>
 #include <SFML/Window/Event.hpp>
 #include <SFML/Window/VideoMode.hpp>
+#include <chrono>
 #include <cstddef>
 #include <cstdlib>
 #include <iostream>
@@ -13,6 +17,7 @@
 #include <optional>
 #include <ostream>
 #include <sstream>
+#include <string.h>
 #include <vector>
 // #include <random>
 
@@ -23,27 +28,46 @@ int main(int argc, char *argv[]) {
     return 1;
   }
 
-  const int WIDTH = atoi(argv[1]);
-  const int HEIGHT = atoi(argv[2]);
+  const int WINDOW_WIDTH = atoi(argv[1]);
+  const int WINDOW_HEIGHT = atoi(argv[2]);
+
+  const int MENU_WIDTH = WINDOW_WIDTH * 0.25;
+  const int MENU_HEIGHT = WINDOW_HEIGHT / 2;
+
+  const int SIM_WIDTH = WINDOW_WIDTH;
+  const int SIM_HEIGHT = WINDOW_HEIGHT;
+
+  // creating color palette ofr the objects
+  std::vector<sf::Color> color_palette;
+  color_palette.push_back(sf::Color(0, 175, 185));
+  color_palette.push_back(sf::Color(253, 252, 220));
+  color_palette.push_back(sf::Color(181, 101, 118));
+  color_palette.push_back(sf::Color(240, 113, 103));
 
   srand(time(NULL));
 
-  // main window
-  sf::RenderWindow window(sf::VideoMode(WIDTH, HEIGHT), "simulation");
+  // Init of all components
+  sf::RenderWindow window(sf::VideoMode(WINDOW_WIDTH, WINDOW_HEIGHT),
+                          "simulation");
 
   window.setFramerateLimit(60);
   FPS fps;
   sf::Clock clock;
   double delta = clock.restart().asSeconds();
 
-  Physics_simulation_engine engine = Physics_simulation_engine(WIDTH, HEIGHT);
+  ImGui::SFML::Init(window);
+
+  Physics_simulation_engine engine =
+      Physics_simulation_engine(SIM_WIDTH, SIM_HEIGHT);
   engine.update(0.0016);
 
-  BoxBody b = BoxBody(WIDTH, 50);
-  b.set_position(0, HEIGHT - 100);
+  // placing initial objects on screen
+  BoxBody b = BoxBody(SIM_WIDTH - 200, 75);
+  b.set_position(100, SIM_HEIGHT - 100);
   b.set_immovable(true);
-  b.set_restitution(.1);
+  b.set_restitution(.25);
   b.set_mass(0);
+  b.color = color_palette[0];
   engine.add_object(b);
 
   b = BoxBody(200, 40);
@@ -51,19 +75,19 @@ int main(int argc, char *argv[]) {
   b.set_immovable(true);
   b.set_mass(0);
   b.set_rotation(135);
+  b.color = color_palette[1];
   engine.add_object(b);
 
   for (int i = 0; i < 0; i++) {
-    float r_x = rand() % WIDTH;
-    float r_y = rand() % HEIGHT;
+    float r_x = rand() % SIM_WIDTH;
+    float r_y = rand() % SIM_HEIGHT;
     BoxBody r_box = BoxBody(rand() % 40 + 30, rand() % 40 + 30);
     r_box.set_position(r_x, r_y);
     r_box.set_rotation(rand() % 180);
     r_box.set_mass(rand() % 10 + 1);
+    r_box.color = color_palette[rand() % color_palette.size()];
     engine.add_object(r_box);
   }
-
-  sf::Vector2i mouse_position = sf::Mouse::getPosition(window);
 
   // used for drawing a box
   bool user_drawing = false;
@@ -71,93 +95,114 @@ int main(int argc, char *argv[]) {
   sf::Vector2i user_drawing_end;
 
   bool user_dragging_box = false;
-  BoxBody *selected_box;
+  BoxBody *selected_box = nullptr; //&(engine.get_objects()[0]);
 
   bool debug = false;
-  bool nice_view = true;
-  sf::Color background_color =
-      !nice_view ? sf::Color::Black : sf::Color(100, 100, 100);
+
+  std::vector<float> update_duration_history;
 
   while (window.isOpen()) {
     // Process events
-    mouse_position = sf::Mouse::getPosition(window);
+    sf::Vector2i mouse_position = sf::Mouse::getPosition(window);
     user_drawing_end = mouse_position;
     sf::Event event;
     while (window.pollEvent(event)) {
+      ImGui::SFML::ProcessEvent(window, event);
       // Close window : exit
       if (event.type == sf::Event::Closed) {
         std::cout << "EXITING" << std::endl;
         engine.delete_all_objects();
         window.close();
-      } else if (event.type == sf::Event::MouseButtonPressed) {
+      } else if (ImGui::GetIO().WantCaptureMouse) {
 
-        if (event.mouseButton.button == sf::Mouse::Left) {
-          user_drawing = true;
-          user_drawing_start = mouse_position;
-          // std::cout << "start drawing" << std::endl;
-        }
+      } else {
+        if (event.type == sf::Event::MouseButtonPressed) {
 
-        if (event.mouseButton.button == sf::Mouse::Right) {
-          //
-        }
-
-      } else if (event.type == sf::Event::MouseButtonReleased) {
-        // create user drawn rectangle when button released
-        if (event.mouseButton.button == sf::Mouse::Left) {
-          // std::cout << "end drawing" << std::endl;
-          user_drawing_end = mouse_position;
-          if (user_drawing_end.x < user_drawing_start.x &&
-              user_drawing_end.y < user_drawing_start.y) {
-            user_drawing_end = user_drawing_start;
+          if (event.mouseButton.button == sf::Mouse::Left) {
+            user_drawing = true;
             user_drawing_start = mouse_position;
-          } else if (user_drawing_end.x < user_drawing_start.x) {
-            int decalage = user_drawing_start.x - user_drawing_end.x;
-            user_drawing_start.x -= decalage;
-            user_drawing_end.x += decalage;
-          } else if (user_drawing_start.y > user_drawing_end.y) {
-            int decalage = user_drawing_start.y - user_drawing_end.y;
-            user_drawing_start.y -= decalage;
-            user_drawing_end.y += decalage;
+            // std::cout << "start drawing" << std::endl;
           }
-          float new_box_width =
-              std::abs(user_drawing_start.x - user_drawing_end.x);
-          float new_box_height =
-              std::abs(user_drawing_start.y - user_drawing_end.y);
-          if (new_box_width > 20 && new_box_height > 20) {
-            BoxBody new_box = BoxBody(new_box_width, new_box_height);
-            new_box.set_position(user_drawing_start.x, user_drawing_start.y);
-            new_box.set_velocity(Vector2f(0, 0));
-            new_box.set_mass(rand() % 100 + 1);
-            new_box.set_rotation(0);
-            engine.add_object(new_box);
+
+          if (event.mouseButton.button == sf::Mouse::Right) {
+            //
           }
-          user_drawing = false;
-        }
-        if (event.mouseButton.button == sf::Mouse::Right) {
-          user_dragging_box = false;
-          // std::cout << "released" << std::endl;
-        }
-      } else if (sf::Mouse::isButtonPressed(
-                     sf::Mouse::Right)) { // search and start dragging box
-                                          // around
-        if (!user_dragging_box) {
-          std::optional<BoxBody *> selection =
-              engine.get_body_at_position(mouse_position.x, mouse_position.y);
-          if (selection.has_value()) {
-            user_dragging_box = true;
-            selected_box = selection.value();
-            // std::cout << "dragging" << std::endl;
+
+        } else if (event.type == sf::Event::MouseButtonReleased) {
+          // create user drawn rectangle when button released
+          if (event.mouseButton.button == sf::Mouse::Left) {
+            // std::cout << "end drawing" << std::endl;
+            user_drawing_end = mouse_position;
+            if (user_drawing_end.x < user_drawing_start.x &&
+                user_drawing_end.y < user_drawing_start.y) {
+              user_drawing_end = user_drawing_start;
+              user_drawing_start = mouse_position;
+            } else if (user_drawing_end.x < user_drawing_start.x) {
+              int decalage = user_drawing_start.x - user_drawing_end.x;
+              user_drawing_start.x -= decalage;
+              user_drawing_end.x += decalage;
+            } else if (user_drawing_start.y > user_drawing_end.y) {
+              int decalage = user_drawing_start.y - user_drawing_end.y;
+              user_drawing_start.y -= decalage;
+              user_drawing_end.y += decalage;
+            }
+            float new_box_width =
+                std::abs(user_drawing_start.x - user_drawing_end.x);
+            float new_box_height =
+                std::abs(user_drawing_start.y - user_drawing_end.y);
+            if (new_box_width > 20 && new_box_height > 20) {
+              BoxBody new_box = BoxBody(new_box_width, new_box_height);
+              new_box.set_position(user_drawing_start.x, user_drawing_start.y);
+              new_box.set_velocity(Vector2f(0, 0));
+              new_box.set_mass(rand() % 100 + 1);
+              new_box.set_rotation(0);
+              new_box.color = color_palette[rand() % color_palette.size()];
+              engine.add_object(new_box);
+            }
+            user_drawing = false;
           }
+          if (event.mouseButton.button == sf::Mouse::Right) {
+            user_dragging_box = false;
+            // std::cout << "released" << std::endl;
+          }
+        } else if (sf::Mouse::isButtonPressed(
+                       sf::Mouse::Right)) { // search and start dragging box
+                                            // around
+          if (!user_dragging_box) {
+            std::optional<BoxBody *> selection =
+                engine.get_body_at_position(mouse_position.x, mouse_position.y);
+            if (selection.has_value()) {
+              user_dragging_box = true;
+              selected_box = selection.value();
+              // std::cout << "dragging" << std::endl;
+            }
+          }
+        } else if (event.type == sf::Event::KeyPressed &&
+                   event.key.code == sf::Keyboard::C) {
+          engine.delete_all_objects();
         }
-      } else if (event.type == sf::Event::KeyPressed &&
-                 event.key.code == sf::Keyboard::C) {
-        engine.delete_all_objects();
       }
     }
 
+    auto start = std::chrono::steady_clock::now();
     // updating
     engine.update(delta);
+    auto update_duration =
+        std::chrono::duration_cast<std::chrono::microseconds>(
+            std::chrono::steady_clock::now() - start);
 
+	if(update_duration_history.size() < 250){
+		update_duration_history.push_back(update_duration.count());
+	}else{
+		update_duration_history.erase(update_duration_history.begin());
+		update_duration_history.push_back(update_duration.count());
+	}
+
+    start = std::chrono::steady_clock::now();//render time start
+
+	//background color is black if debug mode
+    sf::Color background_color =
+        debug ? sf::Color::Black : sf::Color(100, 100, 100);
     window.clear(background_color);
 
     // draw objects
@@ -192,7 +237,7 @@ int main(int argc, char *argv[]) {
     }
 
     // drag box around
-    if (user_dragging_box) {
+    if (user_dragging_box && selected_box != nullptr) {
       Vector2f velocity_to_add;
       // selected_box = objects[0];
       velocity_to_add.x = (mouse_position.x - selected_box->get_center().x);
@@ -209,7 +254,7 @@ int main(int argc, char *argv[]) {
       Vector2f position = box.get_position();
       Vector2f size_shape = box.get_size_sides();
 
-      if (nice_view) {
+      if (!debug) {
         // dessiner rectangle
         sf::RectangleShape rectangle;
 
@@ -219,19 +264,20 @@ int main(int argc, char *argv[]) {
         rectangle.setOrigin((int)size_shape.x / 2, (int)size_shape.y / 2);
         rectangle.setRotation(box.get_rotation());
         int mass_color = 255 / box.get_mass();
-        rectangle.setFillColor(
-            sf::Color(mass_color, mass_color, mass_color, 255));
-        rectangle.setOutlineThickness(2); // Set outline thickness
-        if (box.is_immovable()) {
-          rectangle.setOutlineColor(sf::Color::Black); // Set outline color
+        rectangle.setFillColor(box.color);
+        rectangle.setOutlineThickness(2);
+        if (selected_box != nullptr && box.id == selected_box->id) {
+          rectangle.setOutlineColor(sf::Color::Red);
+        } else if (box.is_immovable()) {
+          rectangle.setOutlineColor(sf::Color::Black);
         } else {
-          rectangle.setOutlineColor(sf::Color::White); // Set outline color
+          rectangle.setOutlineColor(sf::Color::White);
         }
 
         window.draw(rectangle);
       }
 
-      if (debug) {
+      else {
         // window.clear();
         //  dessiner les sommets du rectangle
         for (Vector2f vertex : vertices.get_vertices()) {
@@ -328,17 +374,65 @@ int main(int argc, char *argv[]) {
         }
       }
     }
-
-    // Update the window
-    window.display();
-
-    // show fps //trouver sur internet je sais plus ou
+    auto render_duration =
+        std::chrono::duration_cast<std::chrono::milliseconds>(
+            std::chrono::steady_clock::now() - start);
     fps.update();
     std::ostringstream fpsString;
     fpsString << fps.getFPS();
     window.setTitle("fps: " + fpsString.str() +
                     "/ objects: " + std::to_string(objects.size()) +
                     "/ delta: " + std::to_string(delta));
-    delta = clock.restart().asSeconds();
+    delta = clock.getElapsedTime().asSeconds();
+
+    // drawing gui
+    ImGui::SFML::Update(window, clock.restart());
+    ImGui::Begin("Sim Settings");
+    // ImGui::SetWindowSize(ImVec2(MENU_WIDTH, MENU_HEIGHT));
+    // ImGui::SetWindowPos(ImVec2(WINDOW_WIDTH - MENU_WIDTH, 0));
+    ImGui::ShowDemoWindow();
+
+    if (ImGui::BeginTabBar("Navigation")) {
+
+      if (ImGui::BeginTabItem("Settings")) {
+        ImGui::Text("fps: %d", fps.getFPS());
+		ImGui::PlotLines("update time", update_duration_history.data(), update_duration_history.size());
+        ImGui::Text("update duration : %lu ms", update_duration.count());
+        ImGui::Text("render duration : %lu ms", render_duration.count());
+        ImGui::SliderInt("Accuracy", &(engine.accuracy), 1, 20);
+		ImGui::SliderFloat("Position correction treshold", &(engine.correction_treshold), 0, 20);
+		ImGui::SliderFloat("Position correction strength", &(engine.correction_percentage), 0, 2);
+        ImGui::Checkbox("Debug view", &debug);
+        ImGui::EndTabItem();
+      }
+
+      if (ImGui::BeginTabItem("Inspector")) {
+        if (selected_box != nullptr) {
+          ImGui::Text("Object ID : %d", selected_box->id);
+          ImGui::Text("mass : %f", selected_box->get_mass());
+          ImGui::Text("restitution : %f", selected_box->get_restitution());
+          bool is_static = selected_box->is_immovable();
+          ImGui::Checkbox("static", &is_static);
+          selected_box->set_immovable(is_static);
+          ImGui::Text("position : %s",
+                      selected_box->get_position().to_string().c_str());
+          ImGui::Text("velocity : %s",
+                      selected_box->get_velocity().to_string().c_str());
+        } else {
+          ImGui::Text("Right click to select an object");
+        }
+		ImGui::EndTabItem();
+      }
+    }
+	ImGui::EndTabBar();
+
+    ImGui::End();
+
+    ImGui::SFML::Render(window);
+    // Update the window
+
+    window.display();
+
+    // show fps //trouver sur internet je sais plus ou
   }
 }

@@ -8,6 +8,7 @@
 #include <ostream>
 #include <stdlib.h>
 #include <vector>
+#include <time.h>
 
 class Physics_simulation_engine {
 private:
@@ -17,13 +18,15 @@ private:
   std::vector<Edges> edges_list;       // liste des cotés des objets
   double delta;
   Vector2f simulation_size;
+  int id_count = 1;
   // le nombre de fois a subdivider delta
-  int accuracy = 8;
+  public:
+  int accuracy = 5;
   // si la vélocité est négligeable on ne l'applique pas
   float apply_velocity_treshold = 8;
   // from 0 to 1 how much we want to correct position too high value may look
   // weird not used currently
-  float correction_percentage = 1.2;
+  float correction_percentage = 1.5;
   // let objects sink into each other with this threshold to avoid jitter
   float correction_treshold = 0.1;
 
@@ -32,7 +35,7 @@ private:
 
   Vector2f gravity_force = Vector2f(0, 500);
 
-public:
+
   Physics_simulation_engine(float width, float height) {
     simulation_size = Vector2f(width, height);
   }
@@ -342,7 +345,10 @@ public:
 	return get_body_at_position(a_point.x,a_point.y);
   }
 
-  void add_object(BoxBody a_box) { objects.push_back(a_box); }
+  void add_object(BoxBody a_box) { 
+	a_box.set_id(id_count);
+	id_count++;
+	objects.push_back(a_box); }
 
   std::vector<BoxBody> get_objects() { return objects; }
 
