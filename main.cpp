@@ -106,6 +106,19 @@ int main(int argc, char *argv[]) {
         if (event.mouseButton.button == sf::Mouse::Left) {
           // std::cout << "end drawing" << std::endl;
           user_drawing_end = mouse_position;
+          if (user_drawing_end.x < user_drawing_start.x &&
+              user_drawing_end.y < user_drawing_start.y) {
+            user_drawing_end = user_drawing_start;
+            user_drawing_start = mouse_position;
+          } else if (user_drawing_end.x < user_drawing_start.x) {
+            int decalage = user_drawing_start.x - user_drawing_end.x;
+            user_drawing_start.x -= decalage;
+            user_drawing_end.x += decalage;
+          } else if (user_drawing_start.y > user_drawing_end.y) {
+            int decalage = user_drawing_start.y - user_drawing_end.y;
+            user_drawing_start.y -= decalage;
+            user_drawing_end.y += decalage;
+          }
           float new_box_width =
               std::abs(user_drawing_start.x - user_drawing_end.x);
           float new_box_height =
@@ -115,14 +128,14 @@ int main(int argc, char *argv[]) {
             new_box.set_position(user_drawing_start.x, user_drawing_start.y);
             new_box.set_velocity(Vector2f(0, 0));
             new_box.set_mass(rand() % 100 + 1);
-			new_box.set_rotation(0);
+            new_box.set_rotation(0);
             engine.add_object(new_box);
           }
           user_drawing = false;
         }
         if (event.mouseButton.button == sf::Mouse::Right) {
           user_dragging_box = false;
-          //std::cout << "released" << std::endl;
+          // std::cout << "released" << std::endl;
         }
       } else if (sf::Mouse::isButtonPressed(
                      sf::Mouse::Right)) { // search and start dragging box
@@ -133,7 +146,7 @@ int main(int argc, char *argv[]) {
           if (selection.has_value()) {
             user_dragging_box = true;
             selected_box = selection.value();
-            //std::cout << "dragging" << std::endl;
+            // std::cout << "dragging" << std::endl;
           }
         }
       } else if (event.type == sf::Event::KeyPressed &&
@@ -178,13 +191,13 @@ int main(int argc, char *argv[]) {
       window.draw(lines);
     }
 
-	//drag box around
+    // drag box around
     if (user_dragging_box) {
       Vector2f velocity_to_add;
       // selected_box = objects[0];
       velocity_to_add.x = (mouse_position.x - selected_box->get_center().x);
       velocity_to_add.y = (mouse_position.y - selected_box->get_center().y);
-      selected_box->set_velocity(velocity_to_add );
+      selected_box->set_velocity(velocity_to_add);
     }
 
     for (int i = 0; i < objects.size(); i++) {
