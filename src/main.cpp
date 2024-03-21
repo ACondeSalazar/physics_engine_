@@ -44,7 +44,7 @@ int main(int argc, char *argv[]) {
   color_palette.push_back(sf::Color(181, 101, 118));
   color_palette.push_back(sf::Color(240, 113, 103));
 
-  float gravity[2] = {0, 0};
+  float gravity[2] = {0, 500};
   float gravity_max = 1000;
   float gravity_min = 0;
 
@@ -78,7 +78,7 @@ int main(int argc, char *argv[]) {
   b.set_position(500, 400);
   b.set_immovable(true);
   b.set_mass(0);
-  b.set_rotation(135);
+  b.set_rotation(30);
   b.color = color_palette[1];
   engine.add_object(b);
 
@@ -379,6 +379,16 @@ int main(int argc, char *argv[]) {
               circle.setFillColor(sf::Color::Blue);
               window.draw(circle);
             }
+            //draw real average position of collisions points
+            Vector2f avg = info.get_collision_points_center();
+            sf::CircleShape circle;
+
+              circle.setPosition(avg.x, avg.y);
+              int radius = 4;
+              circle.setRadius(radius);
+              circle.setOrigin(radius, radius);
+              circle.setFillColor(sf::Color::Cyan);
+              window.draw(circle);
           }
         }
       }
@@ -398,13 +408,14 @@ int main(int argc, char *argv[]) {
     ImGui::SFML::Update(window, clock.restart());
     //ImGui::ShowDemoWindow();
     ImGui::Begin("Sim Settings");
+    if (ImGui::Button("Pause/Play")) {
+          simulation_paused = !simulation_paused;
+        }
 
     if (ImGui::BeginTabBar("Navigation")) {
 
       if (ImGui::BeginTabItem("Settings")) {
-        if (ImGui::Button("Pause/Play")) {
-          simulation_paused = !simulation_paused;
-        }
+        
 
         ImGui::Text("fps: %d", fps.getFPS());
         ImGui::PlotLines("update time", update_duration_history.data(),

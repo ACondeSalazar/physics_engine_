@@ -49,7 +49,7 @@ public:
 
   sf::Vector2f convert_to_sfml() { return sf::Vector2f(x, y); }
 
-  std::string to_string(){ return "(" + std::to_string((int)x) + "," + std::to_string((int)y) + ")";}
+  std::string to_string(){ return "(" + std::to_string(x) + "," + std::to_string(y) + ")";}
 
 };
 
@@ -259,6 +259,7 @@ public:
 	}
 
   virtual Vector2f get_center() = 0;
+  virtual float get_inertia() = 0;
 };
 
 class BoxBody : public Entity {
@@ -315,6 +316,14 @@ public:
 
     return vertices;
   }
+
+  float get_inertia(){
+    if(immovable){
+      return 0;
+    }else{
+      return (1/12.0)*mass* ((size_sides.x*size_sides.x) + (size_sides.y*size_sides.y));
+    }
+  }
 };
 
 struct CollisionInfo
@@ -329,6 +338,8 @@ struct CollisionInfo
         float restitution;
         float linear_impulse;
         std::vector<Vector2f> collision_points;
+        Vector2f center_to_collision_center_normal1;
+        Vector2f center_to_collision_center_normal2;
         bool colliding;
 
 
@@ -368,6 +379,15 @@ struct CollisionInfo
         void set_linear_impulse(float a_linear_impulse)
         {
             linear_impulse = a_linear_impulse;
+        }
+
+        Vector2f get_collision_points_center(){
+          Vector2f center = Vector2f(0,0);
+          for(Vector2f point : collision_points){
+            center = center+ point;
+          }
+          center = center/collision_points.size();
+          return center;
         }
 
 

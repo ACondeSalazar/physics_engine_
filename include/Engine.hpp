@@ -75,7 +75,7 @@ private:
 
       if (box.is_immovable()) {
         box.set_velocity(0, 0);
-        box.add_to_rotation(box.get_angular_velocity() * delta);
+        box.set_angular_velocity(0);
         continue;
       }
 
@@ -187,24 +187,29 @@ private:
         collision_info.set_normal(axis);
       }
     }
-
+    std::cout << "\x1B[2J\x1B[H" << std::endl; // clear console
     // on s'assure de toujours pointe de l'objet 1 vers l'objet 2 pour
     // eviter le bordel apres
-    if (collision_info.normal.dot_product(position2 - position1) < 0) {
-		//std::cout << "inverted"<<  std::endl;
+    if (collision_info.normal.dot_product(box2.get_center() - box1.get_center()) < 0) {
+		std::cout << "inverted"<<  std::endl;
       collision_info.normal = -collision_info.normal;
     }
     collision_info.set_normal(collision_info.normal /
                               collision_info.normal.get_norm());
 
     // relative velocity along collision normal
-	if(box1.is_immovable()){
+	if(box1.is_immovable() && false){
+    std::cout <<box2.get_velocity().to_string() << "  " << collision_info.normal.to_string() <<   std::endl;
 		collision_info.relative_normal_velocity = collision_info.normal.dot_product(
 	box2.get_velocity());
-	}else if (box2.is_immovable()) {
+  std::cout << collision_info.relative_normal_velocity<<   std::endl;
+	}else if (box2.is_immovable()&& false) {
+    std::cout << "2" <<   std::endl;
 		collision_info.relative_normal_velocity = collision_info.normal.dot_product(
 	-box1.get_velocity());
+  std::cout << collision_info.relative_normal_velocity <<   std::endl;
 	}else {
+    std::cout <<box2.get_velocity().to_string() << "  " << collision_info.normal.to_string() <<   std::endl;
 		collision_info.relative_normal_velocity = collision_info.normal.dot_product(
 	box2.get_velocity() - box1.get_velocity());
 	}
@@ -216,9 +221,9 @@ private:
 	//std::cout << collision_info.relative_normal_velocity<<  std::endl;
     // si les objets s'eloignent la collision a deja ete resolu
     if (collision_info.relative_normal_velocity >0) {
-      //std::cout << "s'eloigne" <<   std::endl;
+      std::cout << "s'eloigne" <<   std::endl;
       collision_info.colliding = false;
-      return collision_info;
+      //return collision_info;
     }
 
     // ceofficient de restitution
@@ -234,6 +239,9 @@ private:
         }
       }
     }
+
+    collision_info.center_to_collision_center_normal1 =(collision_info.get_collision_points_center() - box1.get_center()).get_normal();
+    collision_info.center_to_collision_center_normal2 =(collision_info.get_collision_points_center() - box2.get_center()).get_normal();
 
     return collision_info;
   }
@@ -284,7 +292,10 @@ private:
 
     float linear_impulse = -(1 + collision_info.restitution) *
                            collision_info.relative_normal_velocity;
-    linear_impulse /= (box1.get_inverse_mass() + box2.get_inverse_mass());
+
+    float dot1 = (collision_info.center_to_collision_center_normal1.dot_product(collision_normal));
+    float dot2 = (collision_info.center_to_collision_center_normal2.dot_product(collision_normal));
+    linear_impulse /= (box1.get_inverse_mass() + box2.get_inverse_mass());// + (dot1*dot1)/box1.get_inertia() + (dot2*dot2)/box2.get_inertia();
 
     // std::cout << linear_impulse << std::endl;
 
@@ -296,6 +307,10 @@ private:
 
       box2.add_to_velocity(impulse_vec * box2.get_inverse_mass());
       // box2.add_to_position(collision_normal * position_correction);
+
+      //box1.add_to_angular_velocity((collision_info.center_to_collision_center_normal1.dot_product(impulse_vec))/box1.get_inertia());
+      //box2.add_to_angular_velocity((collision_info.center_to_collision_center_normal2.dot_product(impulse_vec))/box2.get_inertia());
+    
   }
 
   void correct_position(CollisionInfo collision_info, float strength) {
