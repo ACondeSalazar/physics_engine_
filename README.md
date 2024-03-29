@@ -59,7 +59,7 @@
 
 <h3  align="left">How to use</h3>
 
-  
+  Download the release or,
 
 
 On linux :
