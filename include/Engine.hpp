@@ -23,7 +23,7 @@ private:
   int id_count = 1;
   // le nombre de fois a subdivider delta
 public:
-  int accuracy = 5;
+  int accuracy = 50;
   // si la vélocité est négligeable on ne l'applique pas
   float apply_velocity_treshold = 8;
   float apply_angular_velocity_treshold = 15;
@@ -238,7 +238,7 @@ public:
     }
 
     if (collision_info.collision_points.size() == 0) {
-      printf("collision without collision points ??");
+      //printf("collision without collision points ??");
     }
 
     collision_info.center_to_col_point1 =
@@ -346,7 +346,7 @@ public:
                   (dot2 * dot2) * box2.get_inverse_inertia();
 
     if (std::isnan(denom)) {
-      std::cout << "------ALERTE denom-------" << std::endl;
+      /* std::cout << "------ALERTE denom-------" << std::endl;
       std::cout << "boxes inv mass "
                 << box1.get_inverse_mass() + box2.get_inverse_mass()
                 << std::endl;
@@ -364,7 +364,7 @@ public:
       std::cout << "rb " << rb.to_string() << std::endl;
 
       std::cout << "col point " << col_point.to_string() << std::endl;
-      std::cout << "col point2 " << rb.to_string() << std::endl;
+      std::cout << "col point2 " << rb.to_string() << std::endl; */
       return;
     }
     float restitution = collision_info.restitution;

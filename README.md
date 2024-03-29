@@ -15,7 +15,9 @@
   
   <img align="right" src="https://i.imgflip.com/8kxs4b.gif" />
   <br clear="both">  
-   <img align="center" src="https://i.imgflip.com/8kxt5y.gif" />
+   <img align="left" src="https://i.imgflip.com/8kxt5y.gif" />
+     <img align="right" src="https://i.imgflip.com/8kxuzx.gif" />
+
   
 
 

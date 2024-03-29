@@ -31,7 +31,7 @@ void reset_simulation(Physics_simulation_engine *engine) {
   b.set_immovable(true);
   b.set_restitution(0);
   b.set_mass(0);
-  b.color = color_palette[0];
+  b.color = color_palette[1];
   engine->add_object(b);
 
   b = BoxBody(300, 40);
@@ -42,10 +42,18 @@ void reset_simulation(Physics_simulation_engine *engine) {
   b.color = color_palette[1];
   engine->add_object(b);
 
-  b = BoxBody(200, 40);
-  b.set_position(200, 400);
+  b = BoxBody(500, 40);
+  b.set_position(900, 500);
+  b.set_immovable(true);
+  b.set_rotation(-30);
+  b.set_restitution(0);
   b.color = color_palette[1];
   engine->add_object(b);
+
+  /* b = BoxBody(200, 40);
+  b.set_position(200, 400);
+  b.color = color_palette[1];
+  engine->add_object(b); */
 }
 
 int main(int argc, char *argv[]) {
@@ -110,7 +118,7 @@ int main(int argc, char *argv[]) {
   bool user_dragging_box = false;
   BoxBody *selected_box = nullptr; 
 
-  bool debug = true;
+  bool debug = false;
   bool simulation_paused = false;
 
   std::vector<float> update_duration_history;
@@ -528,6 +536,10 @@ int main(int argc, char *argv[]) {
 
       if (ImGui::BeginTabItem("Help")) {
         ImGui::BulletText("Hold Right click to select and drag object");
+		ImGui::BulletText("	Currently selected object has a red outline");
+		ImGui::BulletText("	Use the inspector to change the selected object properties");
+		ImGui::BulletText("Hold left click and drag to create a rectangle");
+		
         ImGui::EndTabItem();
       }
     }
