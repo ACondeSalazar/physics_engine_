@@ -14,12 +14,39 @@
 #include <cstdlib>
 #include <iostream>
 #include <iterator>
+#include <memory>
 #include <optional>
 #include <ostream>
 #include <sstream>
 #include <string.h>
 #include <vector>
 // #include <random>
+std::vector<sf::Color> color_palette;
+//#reset simulation
+void reset_simulation(Physics_simulation_engine *engine) {
+  engine->delete_all_objects();
+  // placing initial objects on screen
+  BoxBody b = BoxBody(1600 - 200, 75);
+  b.set_position(100, 1000 - 100);
+  b.set_immovable(true);
+  b.set_restitution(0);
+  b.set_mass(0);
+  b.color = color_palette[0];
+  engine->add_object(b);
+
+  b = BoxBody(300, 40);
+  b.set_position(300, 600);
+  b.set_immovable(true);
+  b.set_rotation(30);
+  b.set_restitution(0);
+  b.color = color_palette[1];
+  engine->add_object(b);
+
+  b = BoxBody(200, 40);
+  b.set_position(200, 400);
+  b.color = color_palette[1];
+  engine->add_object(b);
+}
 
 int main(int argc, char *argv[]) {
 
@@ -38,9 +65,7 @@ int main(int argc, char *argv[]) {
   const int SIM_HEIGHT = WINDOW_HEIGHT;
 
   // creating color palette ofr the objects
-  std::vector<sf::Color> color_palette;
   color_palette.push_back(sf::Color(0, 175, 185));
-  color_palette.push_back(sf::Color(253, 252, 220));
   color_palette.push_back(sf::Color(181, 101, 118));
   color_palette.push_back(sf::Color(240, 113, 103));
 
@@ -64,25 +89,9 @@ int main(int argc, char *argv[]) {
   Physics_simulation_engine engine =
       Physics_simulation_engine(SIM_WIDTH, SIM_HEIGHT);
   engine.update(0.0016);
+  reset_simulation(&engine);
 
-  // placing initial objects on screen
-  BoxBody b = BoxBody(SIM_WIDTH - 200, 75);
-  b.set_position(100, SIM_HEIGHT - 100);
-  b.set_immovable(true);
-  b.set_restitution(.25);
-  b.set_mass(0);
-  b.color = color_palette[0];
-  engine.add_object(b);
-
-  b = BoxBody(200, 40);
-  b.set_position(500, 400);
-  b.set_immovable(true);
-  b.set_mass(0);
-  b.set_rotation(30);
-  b.color = color_palette[1];
-  engine.add_object(b);
-
-  for (int i = 0; i < 10; i++) {
+  for (int i = 0; i < 0; i++) {
     float r_x = rand() % SIM_WIDTH;
     float r_y = rand() % SIM_HEIGHT;
     BoxBody r_box = BoxBody(rand() % 40 + 30, rand() % 40 + 30);
@@ -99,9 +108,9 @@ int main(int argc, char *argv[]) {
   sf::Vector2i user_drawing_end;
 
   bool user_dragging_box = false;
-  BoxBody *selected_box = nullptr; //&(engine.get_objects()[0]);
+  BoxBody *selected_box = nullptr; 
 
-  bool debug = false;
+  bool debug = true;
   bool simulation_paused = false;
 
   std::vector<float> update_duration_history;
@@ -155,7 +164,7 @@ int main(int argc, char *argv[]) {
                 std::abs(user_drawing_start.x - user_drawing_end.x);
             float new_box_height =
                 std::abs(user_drawing_start.y - user_drawing_end.y);
-            if (new_box_width > 20 && new_box_height > 20) {
+            if (new_box_width > 20 && new_box_height > 20) { //do not create really small object
               BoxBody new_box = BoxBody(new_box_width, new_box_height);
               new_box.set_position(user_drawing_start.x, user_drawing_start.y);
               new_box.set_velocity(Vector2f(0, 0));
@@ -272,16 +281,18 @@ int main(int argc, char *argv[]) {
         rectangle.setSize(size_shape.convert_to_sfml());
         rectangle.setOrigin((int)size_shape.x / 2, (int)size_shape.y / 2);
         rectangle.setRotation(box.get_rotation());
-        int mass_color = 255 / box.get_mass();
-        rectangle.setFillColor(box.color);
+		rectangle.setFillColor(box.color);
         rectangle.setOutlineThickness(2);
         if (selected_box != nullptr && box.id == selected_box->id) {
           rectangle.setOutlineColor(sf::Color::Red);
         } else if (box.is_immovable()) {
           rectangle.setOutlineColor(sf::Color::Black);
+		  rectangle.setFillColor(sf::Color::White);
         } else {
           rectangle.setOutlineColor(sf::Color::White);
         }
+
+		
 
         window.draw(rectangle);
       }
@@ -378,17 +389,51 @@ int main(int argc, char *argv[]) {
               circle.setOrigin(radius, radius);
               circle.setFillColor(sf::Color::Blue);
               window.draw(circle);
+
+			/* //line to center
+			  sf::VertexArray ligne(sf::Lines, 2);
+            ligne[0].position = center1.convert_to_sfml();
+            ligne[1].position =
+                ((center1 + (collision_point-center1))).convert_to_sfml();
+            ligne[0].color = sf::Color::Cyan;
+            ligne[1].color = sf::Color::Cyan;
+			window.draw(ligne);
+
+            ligne[0].position = center2.convert_to_sfml();
+            ligne[1].position =
+                ((center2 + (collision_point-center2))).convert_to_sfml();
+            ligne[0].color = sf::Color::Cyan;
+            ligne[1].color = sf::Color::Cyan;
+			window.draw(ligne); */
             }
-            //draw real average position of collisions points
+            // draw real average position of collisions points
             Vector2f avg = info.get_collision_points_center();
             sf::CircleShape circle;
 
-              circle.setPosition(avg.x, avg.y);
-              int radius = 4;
-              circle.setRadius(radius);
-              circle.setOrigin(radius, radius);
-              circle.setFillColor(sf::Color::Cyan);
-              window.draw(circle);
+            circle.setPosition(avg.x, avg.y);
+            int radius = 4;
+            circle.setRadius(radius);
+            circle.setOrigin(radius, radius);
+            circle.setFillColor(sf::Color::Cyan);
+            window.draw(circle);
+
+			//draw rotation normal
+			Vector2f center = info.get_collision_points_center();
+            sf::VertexArray ligne(sf::Lines, 2);
+            ligne[0].position = center2.convert_to_sfml();
+            ligne[1].position =
+                ((center2 + info.center_to_col_point2)*1).convert_to_sfml();
+            ligne[0].color = sf::Color::Red;
+            ligne[1].color = sf::Color::Red;
+            window.draw(ligne);
+			
+            sf::VertexArray ligne2(sf::Lines, 2);
+            ligne[0].position = center1.convert_to_sfml();
+            ligne[1].position =
+                ((center1 + info.center_to_col_point1)*1).convert_to_sfml();
+            ligne[0].color = sf::Color::Red;
+            ligne[1].color = sf::Color::Red;
+            window.draw(ligne2);
           }
         }
       }
@@ -406,27 +451,32 @@ int main(int argc, char *argv[]) {
 
     // drawing gui
     ImGui::SFML::Update(window, clock.restart());
-    //ImGui::ShowDemoWindow();
+    // ImGui::ShowDemoWindow();
     ImGui::Begin("Sim Settings");
     if (ImGui::Button("Pause/Play")) {
-          simulation_paused = !simulation_paused;
-        }
+      simulation_paused = !simulation_paused;
+    }
+    ImGui::SameLine();
+    if (ImGui::Button("Reset")) {
+      reset_simulation(&engine);
+    }
 
     if (ImGui::BeginTabBar("Navigation")) {
 
       if (ImGui::BeginTabItem("Settings")) {
-        
 
         ImGui::Text("fps: %d", fps.getFPS());
         ImGui::PlotLines("update time", update_duration_history.data(),
                          update_duration_history.size());
-		float avg_update_time = 0;
-		for (int i = 0; i < update_duration_history.size(); i++){avg_update_time+= update_duration_history[i];}
-		avg_update_time /= update_duration_history.size()*1000;
+        float avg_update_time = 0;
+        for (int i = 0; i < update_duration_history.size(); i++) {
+          avg_update_time += update_duration_history[i];
+        }
+        avg_update_time /= update_duration_history.size() * 1000;
         ImGui::Text("average update duration : %.2f ms", avg_update_time);
         ImGui::Text("render duration : %lu ms", render_duration.count());
         ImGui::Separator();
-        ImGui::SliderInt("Accuracy", &(engine.accuracy), 1, 50);
+        ImGui::SliderInt("Accuracy", &(engine.accuracy), 1, 100);
         ImGui::SliderFloat("Position correction treshold",
                            &(engine.correction_treshold), 0, 20);
         ImGui::SliderFloat("Position correction strength",
@@ -446,27 +496,30 @@ int main(int argc, char *argv[]) {
                       selected_box->get_position().to_string().c_str());
           ImGui::Text("velocity : %s",
                       selected_box->get_velocity().to_string().c_str());
+		ImGui::Text("angular velocity : %f",
+                      selected_box->get_angular_velocity());
           ImGui::Separator();
-		  ImGui::Text("Edit properties :");
+          ImGui::Text("Edit properties :");
 
-			bool is_static = selected_box->is_immovable();
+          bool is_static = selected_box->is_immovable();
           ImGui::Checkbox("static", &is_static);
-		  //on ne modifie le tag static que si changement
-		  if(is_static != selected_box->is_immovable()){ 
-			selected_box->set_immovable(is_static);
-		  }
-          
+          // on ne modifie le tag static que si changement
+          if (is_static != selected_box->is_immovable()) {
+            selected_box->set_immovable(is_static);
+          }
 
-		if(!is_static){
-			int mass = selected_box->get_mass();
-		  ImGui::SliderInt("Mass", &(mass), 1, 500);
-		  selected_box->set_mass(mass);
+          if (!is_static) {
+            int mass = selected_box->get_mass();
+            ImGui::SliderInt("Mass", &(mass), 1, 1500);
+            selected_box->set_mass(mass);
+          }
+          float restitution = selected_box->get_restitution();
+          ImGui::SliderFloat("Restitution", &(restitution), 0, 1);
+          selected_box->set_restitution(restitution);
 
-		}
-		  float restitution = selected_box->get_restitution();
-		  ImGui::SliderFloat("restitution", &(restitution), 0, 1);
-		  selected_box->set_restitution(restitution);
-		  
+          float inertia = selected_box->get_inertia();
+          ImGui::Text("Inertia %f", inertia);
+
         } else {
           ImGui::Text("Right click(or hold) to select an object");
         }

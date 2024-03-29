@@ -4,6 +4,7 @@
 #include <SFML/Graphics/Color.hpp>
 #include <SFML/System/Vector2.hpp>
 #include <cmath>
+#include <cstdio>
 #include <string>
 #include <vector>
 #include <optional>
@@ -29,6 +30,10 @@ public:
     return Vector2f(x + other.x, y + other.y);
   }
 
+  Vector2f operator+(const int other) const {
+    return Vector2f(x + other, y + other);
+  }
+
   Vector2f operator-() const { return Vector2f(-x, -y); }
 
   Vector2f operator-(const Vector2f other) const {
@@ -46,6 +51,8 @@ public:
 	Vector2f get_normalized_normal(){ return get_normal()/get_norm();}
 
   float dot_product(Vector2f other) { return (x * other.x) + (y * other.y); }
+
+  float cross_product(Vector2f other){ return x*other.y - y*other.x;}
 
   sf::Vector2f convert_to_sfml() { return sf::Vector2f(x, y); }
 
@@ -316,16 +323,25 @@ public:
 
     return vertices;
   }
-
+//#inertia
   float get_inertia(){
     if(immovable){
       return 0;
     }else{
-      return (1/12.0)*mass* ((size_sides.x*size_sides.x) + (size_sides.y*size_sides.y));
+	  int width = size_sides.x/5;
+	  int height = size_sides.y/5;
+      return (1/12.0)*mass* ((width*width) + (height*height));
     }
   }
+  float get_inverse_inertia(){
+	if(immovable){
+		return 0;
+	}else{
+		return 1.0/get_inertia();
+	}
+  }
 };
-
+//#CollisionInfo Struct
 struct CollisionInfo
 {
         int index_box1;
@@ -338,8 +354,8 @@ struct CollisionInfo
         float restitution;
         float linear_impulse;
         std::vector<Vector2f> collision_points;
-        Vector2f center_to_collision_center_normal1;
-        Vector2f center_to_collision_center_normal2;
+        Vector2f center_to_col_point1;
+        Vector2f center_to_col_point2;
         bool colliding;
 
 
@@ -386,6 +402,7 @@ struct CollisionInfo
           for(Vector2f point : collision_points){
             center = center+ point;
           }
+		  if(collision_points.size() == 0){}//printf("eopeoeoeoe");}
           center = center/collision_points.size();
           return center;
         }
